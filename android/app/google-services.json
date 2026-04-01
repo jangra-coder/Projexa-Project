@@ -1,0 +1,54 @@
+{
+  "project_info": {
+    "project_number": "497167395549",
+    "project_id": "warranty-vault-34782",
+    "storage_bucket": "warranty-vault-34782.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:497167395549:android:6bfb281e9d95b5b2e4c934",
+        "android_client_info": {
+          "package_name": "com.example.projexa"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "497167395549-verfk14m9fp4pc11iva21nk5qdmmac59.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.projexa",
+            "certificate_hash": "02b0238e9aedb29cea64ab04a016127dc8484402"
+          }
+        },
+        {
+          "client_id": "497167395549-3pg90qi89hig1kknt36nq3brkh1t0e71.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBtqgsxjX8bNuq1tlVkMIAidPxUIAORr_E"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "497167395549-3pg90qi89hig1kknt36nq3brkh1t0e71.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "497167395549-s1cttbe0v4g81dtfmeederq9oaf3k71e.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.projexa"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
