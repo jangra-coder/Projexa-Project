@@ -198,7 +198,14 @@ class AppProvider extends ChangeNotifier {
   /// Attempt to initialize Google Drive. Fails silently if no Google account.
   Future<void> _tryInitDrive() async {
     try {
-      final accessToken = _authService.driveAccessToken;
+      String? accessToken = _authService.driveAccessToken;
+      if (accessToken == null) {
+        final restored = await _authService.restoreDriveAccess();
+        if (restored) {
+          accessToken = _authService.driveAccessToken;
+        }
+      }
+      
       if (accessToken == null) return;
       await _driveService.initialize(accessToken);
     } catch (_) {

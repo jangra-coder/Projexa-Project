@@ -165,6 +165,23 @@ class AuthService {
     }
   }
 
+  /// Silently restore Google Drive access (e.g. on app restart)
+  Future<bool> restoreDriveAccess() async {
+    try {
+      final future = GoogleSignIn.instance.attemptLightweightAuthentication();
+      if (future == null) return false;
+      
+      final GoogleSignInAccount? googleUser = await future;
+      if (googleUser == null) return false;
+
+      _driveAuthorization = await googleUser.authorizationClient
+          .authorizeScopes(_driveScopes);
+      return _driveAuthorization != null;
+    } catch (e) {
+      return false;
+    }
+  }
+
   // Logout
   Future<void> logout() async {
     await _firebaseAuth.signOut();
