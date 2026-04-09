@@ -51,11 +51,7 @@ class FirestoreWarrantyService {
             WarrantyModel.fromMap(doc.data() as Map<String, dynamic>))
         .toList();
 
-    // Seed sample data for new users
-    if (_warranties.isEmpty) {
-      await _seedSampleData();
-    }
-
+    // The sample data seeding has been removed per user request.
     _sortWarranties();
 
     // Real-time listener for changes from other devices
@@ -108,83 +104,6 @@ class FirestoreWarrantyService {
         .sort((a, b) => a.warrantyEndDate.compareTo(b.warrantyEndDate));
   }
 
-  /// Seed demo data for first-time users.
-  Future<void> _seedSampleData() async {
-    final now = DateTime.now();
-    final samples = [
-      WarrantyModel(
-        id: 'w001',
-        productName: 'iPhone 17 Pro',
-        brand: 'Apple',
-        category: WarrantyCategory.electronics,
-        purchaseDate: now.subtract(const Duration(days: 354)),
-        warrantyEndDate: now.add(const Duration(days: 11)),
-        purchasePrice: 134900,
-        serialNumber: 'DMPXYZ123456',
-        storeName: 'Apple Store',
-        notes: 'AppleCare+ included',
-      ),
-      WarrantyModel(
-        id: 'w002',
-        productName: 'Play Station 5',
-        brand: 'Sony',
-        category: WarrantyCategory.electronics,
-        purchaseDate: now.subtract(const Duration(days: 244)),
-        warrantyEndDate: now.add(const Duration(days: 121)),
-        purchasePrice: 49990,
-        serialNumber: 'PS5-2024-XYZ',
-        storeName: 'Amazon',
-        notes: 'Digital Edition',
-      ),
-      WarrantyModel(
-        id: 'w003',
-        productName: 'Samsung Washing Machine',
-        brand: 'Samsung',
-        category: WarrantyCategory.appliances,
-        purchaseDate: now.subtract(const Duration(days: 180)),
-        warrantyEndDate: now.add(const Duration(days: 550)),
-        purchasePrice: 32999,
-        storeName: 'Flipkart',
-      ),
-      WarrantyModel(
-        id: 'w004',
-        productName: 'MacBook Pro 16"',
-        brand: 'Apple',
-        category: WarrantyCategory.electronics,
-        purchaseDate: now.subtract(const Duration(days: 60)),
-        warrantyEndDate: now.add(const Duration(days: 305)),
-        purchasePrice: 249900,
-        serialNumber: 'C02XYZ12345',
-        storeName: 'Apple Store',
-        notes: 'M4 Max, 48GB RAM',
-      ),
-      WarrantyModel(
-        id: 'w005',
-        productName: 'Dyson V15 Detect',
-        brand: 'Dyson',
-        category: WarrantyCategory.appliances,
-        purchaseDate: now.subtract(const Duration(days: 400)),
-        warrantyEndDate: now.subtract(const Duration(days: 35)),
-        purchasePrice: 56900,
-        storeName: 'Dyson India',
-      ),
-      WarrantyModel(
-        id: 'w006',
-        productName: 'Office Chair Ergonomic',
-        brand: 'Green Soul',
-        category: WarrantyCategory.furniture,
-        purchaseDate: now.subtract(const Duration(days: 200)),
-        warrantyEndDate: now.add(const Duration(days: 895)),
-        purchasePrice: 18999,
-        storeName: 'Amazon',
-      ),
-    ];
-
-    for (final w in samples) {
-      await _collection.doc(w.id).set(w.toMap());
-    }
-    _warranties = samples;
-  }
 
   /// Clean up Firestore listener.
   Future<void> dispose() async {

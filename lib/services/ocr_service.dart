@@ -1,7 +1,7 @@
 import 'dart:io';
 
 import 'package:google_mlkit_text_recognition/google_mlkit_text_recognition.dart';
-
+import 'package:syncfusion_flutter_pdf/pdf.dart';
 /// On-device OCR service using Google ML Kit.
 ///
 /// Runs entirely offline — no API key or billing required.
@@ -14,12 +14,11 @@ class OcrService {
     return await _recognizer.processImage(inputImage);
   }
 
-  /// Extract structured bill data from recognized text.
+  /// Extract structured bill data from raw text.
   ///
   /// Returns a map with keys: productName, date, amount, storeName.
   /// Values may be null if not detected.
-  Map<String, String?> extractBillData(RecognizedText recognizedText) {
-    final allText = recognizedText.text;
+  Map<String, String?> extractBillData(String allText) {
     final lines = allText.split('\n').where((l) => l.trim().isNotEmpty).toList();
 
     return {
@@ -30,9 +29,26 @@ class OcrService {
     };
   }
 
-  /// Gets all raw text blocks for display.
+  /// Process a PDF file to extract text and then structured data.
+  Future<Map<String, String?>> analyzePdf(File pdfFile) async {
+    try {
+      final document = PdfDocument(inputBytes: await pdfFile.readAsBytes());
+      String text = PdfTextExtractor(document).extractText();
+      document.dispose();
+      return extractBillData(text);
+    } catch (e) {
+      throw Exception('Failed to read PDF: $e');
+    }
+  }
+
+  /// Gets all raw text blocks for display from ML Kit.
   List<String> getTextBlocks(RecognizedText recognizedText) {
     return recognizedText.blocks.map((b) => b.text).toList();
+  }
+
+  /// Gets all lines for display from raw text.
+  List<String> getRawLines(String rawText) {
+    return rawText.split('\n').where((l) => l.trim().isNotEmpty).toList();
   }
 
   /// Heuristic: store name is typically the first prominent line.

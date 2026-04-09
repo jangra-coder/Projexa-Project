@@ -1,4 +1,4 @@
-package com.projexa.projexa
+package com.example.projexa
 
 import io.flutter.embedding.android.FlutterActivity
 

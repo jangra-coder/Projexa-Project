@@ -1,7 +1,9 @@
 import 'dart:io';
 
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:syncfusion_flutter_pdf/pdf.dart';
 
 import '../../services/ocr_service.dart';
 import '../../theme/app_colors.dart';
@@ -20,6 +22,7 @@ class _ScanReceiptScreenState extends State<ScanReceiptScreen> {
 
   File? _image;
   bool _isProcessing = false;
+  bool _isPdf = false;
   Map<String, String?>? _extractedData;
   List<String>? _rawTextBlocks;
 
@@ -47,7 +50,7 @@ class _ScanReceiptScreenState extends State<ScanReceiptScreen> {
 
     try {
       final recognizedText = await _ocrService.recognizeText(_image!);
-      final data = _ocrService.extractBillData(recognizedText);
+      final data = _ocrService.extractBillData(recognizedText.text);
       final blocks = _ocrService.getTextBlocks(recognizedText);
 
       setState(() {
@@ -61,6 +64,51 @@ class _ScanReceiptScreenState extends State<ScanReceiptScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('OCR failed: $e'),
+            backgroundColor: AppColors.dangerRed,
+            behavior: SnackBarBehavior.floating,
+            shape:
+                RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+          ),
+        );
+      }
+    }
+  }
+
+  Future<void> _pickPdf() async {
+    final result = await FilePicker.pickFiles(
+      type: FileType.custom,
+      allowedExtensions: ['pdf'],
+    );
+    if (result == null || result.files.single.path == null) return;
+
+    setState(() {
+      _image = File(result.files.single.path!);
+      _isPdf = true;
+      _isProcessing = true;
+      _extractedData = null;
+      _rawTextBlocks = null;
+    });
+
+    try {
+      final docBytes = await _image!.readAsBytes();
+      final document = PdfDocument(inputBytes: docBytes);
+      final text = PdfTextExtractor(document).extractText();
+      document.dispose();
+
+      final data = _ocrService.extractBillData(text);
+      final blocks = _ocrService.getRawLines(text);
+
+      setState(() {
+        _extractedData = data;
+        _rawTextBlocks = blocks.isEmpty ? null : blocks;
+        _isProcessing = false;
+      });
+    } catch (e) {
+      setState(() => _isProcessing = false);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('PDF Analysis failed: $e'),
             backgroundColor: AppColors.dangerRed,
             behavior: SnackBarBehavior.floating,
             shape:
@@ -159,17 +207,33 @@ class _ScanReceiptScreenState extends State<ScanReceiptScreen> {
                     icon: Icons.camera_alt_rounded,
                     label: 'Take Photo',
                     color: AppColors.accentTeal,
-                    onTap: () => _captureImage(ImageSource.camera),
+                    onTap: () {
+                      _isPdf = false;
+                      _captureImage(ImageSource.camera);
+                    },
                     isDark: isDark,
                   ),
                 ),
-                const SizedBox(width: 12),
+                const SizedBox(width: 8),
                 Expanded(
                   child: _ActionButton(
                     icon: Icons.photo_library_rounded,
-                    label: 'From Gallery',
+                    label: 'Gallery',
                     color: AppColors.accentBlue,
-                    onTap: () => _captureImage(ImageSource.gallery),
+                    onTap: () {
+                      _isPdf = false;
+                      _captureImage(ImageSource.gallery);
+                    },
+                    isDark: isDark,
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: _ActionButton(
+                    icon: Icons.picture_as_pdf_outlined,
+                    label: 'Upload PDF',
+                    color: AppColors.warningAmber,
+                    onTap: _pickPdf,
                     isDark: isDark,
                   ),
                 ),
@@ -177,17 +241,52 @@ class _ScanReceiptScreenState extends State<ScanReceiptScreen> {
             ),
             const SizedBox(height: 24),
 
-            // Image preview
+            // Image / PDF preview
             if (_image != null) ...[
-              ClipRRect(
-                borderRadius: BorderRadius.circular(16),
-                child: Image.file(
-                  _image!,
+              if (_isPdf)
+                Container(
                   width: double.infinity,
-                  height: 200,
-                  fit: BoxFit.cover,
+                  height: 120,
+                  decoration: BoxDecoration(
+                    color: isDark ? AppColors.darkCardBg : AppColors.lightCardBg,
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(
+                      color: AppColors.warningAmber.withValues(alpha: 0.3),
+                    ),
+                  ),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Icon(
+                        Icons.picture_as_pdf_rounded,
+                        color: AppColors.warningAmber,
+                        size: 48,
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        _image!.path.split('/').last,
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                          color: isDark ? AppColors.darkText : AppColors.lightText,
+                        ),
+                        textAlign: TextAlign.center,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
+                  ),
+                )
+              else
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(16),
+                  child: Image.file(
+                    _image!,
+                    width: double.infinity,
+                    height: 200,
+                    fit: BoxFit.cover,
+                  ),
                 ),
-              ),
               const SizedBox(height: 20),
             ],
 

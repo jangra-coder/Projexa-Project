@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
@@ -101,7 +102,7 @@ class _AddWarrantyScreenState extends State<AddWarrantyScreen> {
   }
 
   Future<void> _pickImage(bool isProduct) async {
-    final source = await showModalBottomSheet<ImageSource>(
+    final source = await showModalBottomSheet<String>(
       context: context,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
@@ -115,7 +116,7 @@ class _AddWarrantyScreenState extends State<AddWarrantyScreen> {
               mainAxisSize: MainAxisSize.min,
               children: [
                 Text(
-                  isProduct ? 'Product Photo' : 'Receipt Photo',
+                  isProduct ? 'Product Photo' : 'Receipt Document',
                   style: TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.w700,
@@ -126,13 +127,19 @@ class _AddWarrantyScreenState extends State<AddWarrantyScreen> {
                 ListTile(
                   leading: const Icon(Icons.camera_alt_rounded),
                   title: const Text('Take Photo'),
-                  onTap: () => Navigator.pop(ctx, ImageSource.camera),
+                  onTap: () => Navigator.pop(ctx, 'camera'),
                 ),
                 ListTile(
                   leading: const Icon(Icons.photo_library_rounded),
                   title: const Text('Choose from Gallery'),
-                  onTap: () => Navigator.pop(ctx, ImageSource.gallery),
+                  onTap: () => Navigator.pop(ctx, 'gallery'),
                 ),
+                if (!isProduct)
+                  ListTile(
+                    leading: const Icon(Icons.picture_as_pdf_rounded),
+                    title: const Text('Upload PDF'),
+                    onTap: () => Navigator.pop(ctx, 'pdf'),
+                  ),
               ],
             ),
           ),
@@ -142,8 +149,27 @@ class _AddWarrantyScreenState extends State<AddWarrantyScreen> {
 
     if (source == null) return;
 
+    if (source == 'pdf') {
+      final result = await FilePicker.pickFiles(
+        type: FileType.custom,
+        allowedExtensions: ['pdf'],
+      );
+      if (result != null && result.files.single.path != null) {
+        setState(() {
+          if (isProduct) {
+            _productImage = File(result.files.single.path!);
+          } else {
+            _receiptImage = File(result.files.single.path!);
+          }
+        });
+      }
+      return;
+    }
+
+    final imageSource =
+        source == 'camera' ? ImageSource.camera : ImageSource.gallery;
     final picked = await _picker.pickImage(
-      source: source,
+      source: imageSource,
       maxWidth: 1800,
       maxHeight: 1800,
       imageQuality: 85,
@@ -629,7 +655,41 @@ class _ImagePickerBox extends StatelessWidget {
                 children: [
                   ClipRRect(
                     borderRadius: BorderRadius.circular(14),
-                    child: Image.file(image!, fit: BoxFit.cover),
+                    child: image!.path.toLowerCase().endsWith('.pdf')
+                        ? ColoredBox(
+                            color: isDark
+                                ? AppColors.darkInputBg
+                                : AppColors.lightInputBg,
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                const Icon(
+                                  Icons.picture_as_pdf_outlined,
+                                  color: AppColors.warningAmber,
+                                  size: 40,
+                                ),
+                                const SizedBox(height: 6),
+                                Padding(
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 8.0),
+                                  child: Text(
+                                    image!.path.split('/').last,
+                                    style: TextStyle(
+                                      fontSize: 10,
+                                      fontWeight: FontWeight.w500,
+                                      color: isDark
+                                          ? AppColors.darkText
+                                          : AppColors.lightText,
+                                    ),
+                                    textAlign: TextAlign.center,
+                                    maxLines: 2,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          )
+                        : Image.file(image!, fit: BoxFit.cover),
                   ),
                   Positioned(
                     top: 4,

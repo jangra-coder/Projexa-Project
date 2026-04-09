@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../models/warranty_model.dart';
 import '../../providers/app_provider.dart';
@@ -41,6 +42,8 @@ class WarrantyDetailScreen extends StatelessWidget {
     final receiptImageUrl =
         provider.getDriveImageUrl(warranty.receiptImageDriveId);
     final hasImages = productImageUrl != null || receiptImageUrl != null;
+    final isProductPdf = warranty.productImagePath?.toLowerCase().endsWith('.pdf') ?? false;
+    final isReceiptPdf = warranty.receiptImagePath?.toLowerCase().endsWith('.pdf') ?? false;
 
     return Scaffold(
       body: CustomScrollView(
@@ -192,11 +195,18 @@ class WarrantyDetailScreen extends StatelessWidget {
                               label: 'Product',
                               imageUrl: productImageUrl,
                               isDark: isDark,
-                              onTap: () => _showFullScreenImage(
-                                context,
-                                productImageUrl,
-                                'Product Photo',
-                              ),
+                              isPdf: isProductPdf,
+                              onTap: () {
+                                if (isProductPdf && warranty.productImageDriveId != null) {
+                                  launchUrl(Uri.parse('https://drive.google.com/file/d/${warranty.productImageDriveId}/view'));
+                                } else {
+                                  _showFullScreenImage(
+                                    context,
+                                    productImageUrl,
+                                    'Product Photo',
+                                  );
+                                }
+                              },
                             ),
                           ),
                         if (productImageUrl != null && receiptImageUrl != null)
@@ -207,11 +217,18 @@ class WarrantyDetailScreen extends StatelessWidget {
                               label: 'Receipt',
                               imageUrl: receiptImageUrl,
                               isDark: isDark,
-                              onTap: () => _showFullScreenImage(
-                                context,
-                                receiptImageUrl,
-                                'Receipt / Bill',
-                              ),
+                              isPdf: isReceiptPdf,
+                              onTap: () {
+                                if (isReceiptPdf && warranty.receiptImageDriveId != null) {
+                                  launchUrl(Uri.parse('https://drive.google.com/file/d/${warranty.receiptImageDriveId}/view'));
+                                } else {
+                                  _showFullScreenImage(
+                                    context,
+                                    receiptImageUrl,
+                                    'Receipt / Bill',
+                                  );
+                                }
+                              },
                             ),
                           ),
                       ],
@@ -543,12 +560,14 @@ class _ImageCard extends StatelessWidget {
   final String label;
   final String imageUrl;
   final bool isDark;
+  final bool isPdf;
   final VoidCallback onTap;
 
   const _ImageCard({
     required this.label,
     required this.imageUrl,
     required this.isDark,
+    this.isPdf = false,
     required this.onTap,
   });
 
@@ -569,29 +588,41 @@ class _ImageCard extends StatelessWidget {
           child: Stack(
             fit: StackFit.expand,
             children: [
-              Image.network(
-                imageUrl,
-                fit: BoxFit.cover,
-                loadingBuilder: (_, child, progress) {
-                  if (progress == null) return child;
-                  return Center(
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2,
-                      color: isDark
-                          ? AppColors.accentTeal
-                          : AppColors.accentBlue,
+              if (isPdf)
+                Container(
+                  color: isDark ? AppColors.darkInputBg : AppColors.lightInputBg,
+                  child: Center(
+                    child: Icon(
+                      Icons.picture_as_pdf_outlined,
+                      color: AppColors.warningAmber,
+                      size: 48,
                     ),
-                  );
-                },
-                errorBuilder: (_, __, ___) => Center(
-                  child: Icon(
-                    Icons.image_not_supported_outlined,
-                    color: isDark
-                        ? AppColors.darkSubtext
-                        : AppColors.lightSubtext,
+                  ),
+                )
+              else
+                Image.network(
+                  imageUrl,
+                  fit: BoxFit.cover,
+                  loadingBuilder: (_, child, progress) {
+                    if (progress == null) return child;
+                    return Center(
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: isDark
+                            ? AppColors.accentTeal
+                            : AppColors.accentBlue,
+                      ),
+                    );
+                  },
+                  errorBuilder: (_, __, ___) => Center(
+                    child: Icon(
+                      Icons.image_not_supported_outlined,
+                      color: isDark
+                          ? AppColors.darkSubtext
+                          : AppColors.lightSubtext,
+                    ),
                   ),
                 ),
-              ),
               Positioned(
                 bottom: 0,
                 left: 0,
